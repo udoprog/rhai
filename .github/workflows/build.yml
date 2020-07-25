@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request: {}
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        flags: ["", "--features no_std", "--features only_i32"]
+        toolchain: [stable]
+        experimental: [false]
+        include:
+          # smoketests for future and experimental toolchains
+          - {toolchain: beta, os: ubuntu-latest, experimental: false, flags: ""}
+          - {toolchain: nightly, os: ubuntu-latest, experimental: true, flags: ""}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Setup Toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+    - name: Test
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --all {{matrix.flags}}
